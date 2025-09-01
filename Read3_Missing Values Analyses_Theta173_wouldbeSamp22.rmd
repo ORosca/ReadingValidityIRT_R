@@ -1,0 +1,1059 @@
+---
+title: "Missing Data Analysis for the Scores Obtained via 173 Items of IES DAACS Reading Assessment, May 2022 - May 2023, umgc1-and-ua2 Combined Sample, AnSamp2 (n = 1563) and Would-be-sample 2022 (n = 2620)"
+author: "Oxana Rosca"
+date: "`r Sys.Date()`"
+output:
+  word_document:
+    toc: true
+    toc_depth: 6
+    reference_docx: "C:/Users/orosc/OneDrive - University at Albany - SUNY/My DAACS/WordDocMarkdownTemplate.docx"
+  html_document:
+    toc: true
+    toc_depth: 6
+    theme: readable
+---
+
+# Purpose: Missing Data Analysis
+
+The purpose of this document is to analyze the missing data in the Analytic Sample 2 for the DAACS Reading Assessment in 2022. The Analytic Sample 2 (AnSamp2) consists of the first-attempt scores from all non-speedy treatment respondents who took the Reading Assessment in 2022, during their first semester, and had data on at least one out of five demographic variables. The Analytic Sample 2 is a subset of the Would-be Analytic Sample 2 (sampW22), which includes all newly enrolled non-speedy, "treatment-group" undergraduate students who took the DAACS Reading Assessment in 2022. The missing data analysis will focus on the missingness in the "Age" variable and its impact on the Theta-scores in the combined sample and the subsamples of UMGC1 and UA2 respondents.
+
+# DAACS reading Assessment
+
+DAACS Reading Assessment consists of 30 reading passages and 180 dichotomous items (6 items per passage). Each respondent answered to 18 items (k_admin = 18 items). For 2022-2023 data-collection via reading assessment, we used a non-adaptive multistage testing design.
+
+# Participants
+
+A total of 5447 participants completed at least one DAACS assessment, including 4152 (76%) from UMGC1 and 1295 (24%) from UA2. All participants had both a DAACS-assigned ID (DAACS_ID) and an institution-assigned ID.
+For the reading assessment specifically, 4626 respondents participated: 3894 (84%) from UMGC1 and 732 (16%) from UA2.
+
+## Analytic Samples
+
+### Analytic Sample 1 (AnSamp1), n = 4523
+
+  Purpose: For IRT analyses.
+  Composition: Includes first-attempt scores from 3798 (84%) UMGC1 and 725 (16%) UA2 non-speedy respondents.
+  Data: Collected between May 2022 and May 2023, including all non-speedy respondents' reading scores from their first attempts.
+The dataset "read.itemsONLY_AnSamp1" includes 180 items' scores (Q001–Q180) but excludes student IDs and other variables.
+A detailed dataframe "read.items_AnSamp1" includes 200 columns:180 item scores, 2 ID variables,	18 personal variables, such as reading total scores, dichotomous variables (e.g., gender, age group [below or above 24 years], and college [UMGC or UA2]).
+
+### Would-be Analytic Sample 2 (sampW22) , n = 2620, Numgc1 = 1915, Nua2 = 705
+  Purpose: For Missing Vallues Analyses.
+sampW22 is a subset of Analytic Sample 1: the first-attempt scores from all non-speedy, treatment, umgc1 and UAlbany2 students who enrolled in August, 2022 - May, 2023 and completed the DAACS read assessment within first month of their first semester, regardless of whether they have or have no personal data provided by college. These students would be an Analytic Sample 2 of this study if all the year-2022 respondents had personal information provided by the colleges.
+Data: The dataset "read.items_sampW22" includes all eligible respondents' data.
+
+### Sample 2022 with Demographics (samp22D), n = 1598
+  Purpose: For DIF analyses.
+  Composition: A subset of sampW22, including first-attempt scores from 900 umgc1 and 675 ua2 non-speedy, treatment respondents.
+  Criteria: Respondents took the reading assessment in 2022, during the first  first semester, and had at least one demographic data point ("Age," "ethnicity," "gender," "Military," "Pell," or "transfer").
+  Data: The dataset "read.items_samp22D" includes only eligible respondents' data.
+  
+### Analytic Sample 2 (AnSamp2), n = 1563; Numgc1 = 900, Nua2 = 663
+  Purpose: For age-group comparisons.
+  Composition: A subset of Analytic Sample 2, including first-attempt scores from all non-speedy treatment respondents who took the reading assessment in 2022, during their first semester, and had non-missing values on all six demographic variables: age, gender, SES, transfer, military, and ethnicity.
+  Data: The dataset "read.items_AnSamp2" represents this sample.
+  
+###  All items have from 136 to 190 responses 
+```{r}
+read.items_AnSamp2.describe <- describe(read.items_AnSamp2[, 25:204])
+
+min(read.items_AnSamp2.describe$n) # 136
+max(read.items_AnSamp2.describe$n) # 190
+```
+
+# Research Problem: % of umgc1 respondents in 2022 had demographic data
+For running IRT models and getting item parameters (see Reading Items_Bifactor models_umgc1ua2.Rmd), we used Analytic Sample 1 : non-speedy respondents, who took assessment in May 2022 - May 2023.
+For the main analyses (logistic regressions for DIF and group-comparison), we would have used a would-be Analytic Sample 2 (sampW22, n = 2620, Numgc1 = 1915, Nua2 = 705) of the newly enrolled nonspeedy, "treatment-group" undergraduate students, who took DAACS in 2022.
+However, only 900 (%) of umgc1 respondents in 2022 had demographic data (crucial for the main analyses) provided by the colleges.
+
+# RQ: Do the respondents who had age data differ on their read Theta-scores from those who had no age data?
+
+# Sourses
+https://naniar.njtierney.com/
+https://cran.r-project.org/web/packages/finalfit/vignettes/missing.html
+https://towardsdatascience.com/smart-handling-of-missing-data-in-r-6425f8a559f2
+
+# Results: Missingness in Age Variable did not affect the Theta-scores in the combined sample, umgc1, and ua2 subsamples. Theta-scores of the respondents with and without age information didn't differ. 
+
+Shapiro-Wilk normality test for Theta-score distribution for both groups of missingness (the respondents who had age information and those who had not) suggested that the Theta-scores are not normally distributed for all tested groups of respondents: the distribution of the theta scores was statistically signifificantly different from the normal distribution; the p-values for nonspeedy noncontrol umgc1 and ua2 respondents in 2022 who MISSED age info was 0.028, and for the other groups, the p-values were much lower than 0.001: 
+  nonspeedy noncontrol umgc1 and ua2 respondents in 2022 who HAD age info,
+  nonspeedy noncontrol umgc1 respondents in 2022 who HAD age info, 
+  nonspeedy noncontrol umgc1 respondents in 2022 who MISSED info, and
+  nonspeedy noncontrol ua2 respondents in 2022 who MISSED info, and
+  nonspeedy noncontrol ua2 respondents in 2022 who HAD age info.
+  
+Since all six distributions of Theta-scores were not normally distributed, we prioritized the results of Wilcoxon rank sum test (non-parametric) with continuity correction over Welch Two Sample t-test (parametric) although both tests' results were in accord. 
+
+The Wilcoxon rank sum tests with continuity correction suggested that the Theta-scores of the respondents with and without age information didn't differ in the all samples (combined, umgc1, and ua2), all p-values > 0.05). The p-values for the differences between the means for missing and non-missing groups were greater than 0.05.
+
+The Little’s (1988) statistical test for missing completely at random (MCAR, for all non-score variables) data, and The Missing Age across Colleges Chi-square test and the omnibus test (MCAR, for continuous non-score variables) rejected MCAR because 51.8% UMGC1 respondents missed all six demographic variables, thus introducing a strong systematic missingness on variable of college. 
+
+The Little’s (1988) statistical test for missing completely at random (MCAR, for all non-score variables) data and The Missing Age across Colleges Chi-square tests rejected MCAR because 51.8% UMGC1 respondents missed all six demographic variables, thus introducing a strong systematic missingness on variable of college and the all-missing effect (38.6% of the respondents missed all demographic variables).
+
+However, the omnibus tests found no sufficient evidence to reject MNAR in the combined sample and MCAR in the subsamples. 
+
+In umgc1 subsample (n=3713), all tests of missingness suggested MCAR. The 
+Theta-scores of the respondents with and without age information didn't differ.
+
+In umgc1 subsample (n=3713), all tests of missingness suggested MCAR. The 
+Theta-scores of the respondents with and without age information didn't differ.
+
+The Little’s test rejected MCAR in the sample and both subsamples, as was expected due to all-demographics-missing rows. 
+For the same reason, the omnibus test also rejected MCAR in the combined sample, but could not reject it in the subsamples (there is not sufficient evidence to reject MCAR). 
+
+The Little’s (1988) statistical test for missing completely at random (MCAR, for all non-score variables) data and The Missing Age across Colleges Chi-square tests rejected MCAR because 51.8% UMGC1 respondents missed all six demographic variables, thus introducing a strong systematic missingness on variable of college and the all-missing effect (38.6% of the respondents missed all demographic variables).
+
+However, the omnibus tests found no sufficient evidence to reject MNAR in the combined sample and MCAR in the subsamples. 
+
+# R-Packages
+```{r}
+library(dplyr)
+library(effsize)
+library(finalfit)
+library(ggplot2)
+library(ggplotify)
+library(grid)
+library(gridExtra)
+library(maditr)
+library(naniar)
+library(png)
+library(psych)
+library(summarytools)
+```
+
+# Data
+Load the clean IES 2022 data on DAACS Reading from all umgc1 and ua2 respondents 
+```{r}
+#load("~/Dropbox (Hunter College)/DAACS-Validity/Analyses/dataPrep/Reading_dataClean-umgc1ua2_2.RData")
+#load("D:/Dropbox/DAACS-Validity/Analyses/read/Reading_dataClean-umgc1ua2_2.RData")
+load("C:/Users/orosc/OneDrive - University at Albany - SUNY/My DAACS/read/read_dataClean-UMGC1UA2_2.RData")
+```
+
+### Year 2022 respondents (n = 2631, 58.2%)
+
+```{r}
+# Extract the year component from the POSIXct column
+read.items_AnSamp1$readCompletionYear <- 
+  format(read.items_AnSamp1$readCompletionDate, "%Y")
+# Rearrange the order of columns: "readCompletionYear" to the beginning of the set
+read.items_AnSamp1 <-read.items_AnSamp1[, c(1:16, 203, 17:202)]
+
+table(read.items_AnSamp1$readCompletionYear, useNA = "always")
+# Create a frequency table for the year of completion
+read.items_AnSamp1$readCompletionYear %>% table(useNA = "always") %>%
+                        prop.table() %>% round(4)
+```
+
+2631 students enrolled and completed the assessment in 2022
+```{r}
+read.items_wide_nsp_umgc1ua2_wPersonal_2022<-
+  read.items_AnSamp1[read.items_AnSamp1$readCompletionYear == "2022",]
+dim(read.items_wide_nsp_umgc1ua2_wPersonal_2022)
+# No empty rows
+nrow(read.items_wide_nsp_umgc1ua2_wPersonal_2022)-
+  (nrow(read.items_wide_nsp_umgc1ua2_wPersonal_2022[
+    rowSums(is.na(read.items_wide_nsp_umgc1ua2_wPersonal_2022))!=                           ncol(read.items_wide_nsp_umgc1ua2_wPersonal_2022),]))
+
+# No missing values on IDs
+nrow(read.items_wide_nsp_umgc1ua2_wPersonal_2022[
+  is.na(read.items_wide_nsp_umgc1ua2_wPersonal_2022$DAACS_ID),])
+nrow(read.items_wide_nsp_umgc1ua2_wPersonal_2022[
+  is.na(read.items_wide_nsp_umgc1ua2_wPersonal_2022$institution_ID),])
+
+# No missing values on college
+nrow(read.items_wide_nsp_umgc1ua2_wPersonal_2022[
+  is.na(read.items_wide_nsp_umgc1ua2_wPersonal_2022$college),])
+
+# No missing values in readTime = the respondents who didn't take Reading Assessment
+nrow(read.items_wide_nsp_umgc1ua2_wPersonal_2022[
+  is.na(read.items_wide_nsp_umgc1ua2_wPersonal_2022$readTime),])
+```
+
+### Remove 11 "control" students (contamination)
+Since in umgc1 the DAACS assessment was offered only as a part of a course, we subset ua2 treatment students, umgc1 treatment students, and umgc1 students with NA in the group variable.
+```{r}
+# Frequency table
+read.items_wide_nsp_umgc1ua2_wPersonal_2022$group <- 
+  trimws(as.character(read.items_wide_nsp_umgc1ua2_wPersonal_2022$group))
+
+table(read.items_wide_nsp_umgc1ua2_wPersonal_2022$group, 
+      read.items_wide_nsp_umgc1ua2_wPersonal_2022$college, 
+        useNA = "always")
+```
+
+2620 non-control-group students; Would-be-sample 2022 (sampW22)
+```{r}
+# The college and group values might be case-sensitive. Standardize them before subsetting:
+read.items_wide_nsp_umgc1ua2_wPersonal_2022$college <- 
+  tolower(read.items_wide_nsp_umgc1ua2_wPersonal_2022$college)
+
+read.items_wide_nsp_umgc1ua2_wPersonal_2022$group <- 
+  tolower(read.items_wide_nsp_umgc1ua2_wPersonal_2022$group)
+
+# Subset 2620 not-control-group students
+read.items_wide_nsp_trt_umgc1ua2_wPersonal_2022 <- 
+  subset(read.items_wide_nsp_umgc1ua2_wPersonal_2022, 
+         (college == "ua2" & (group == "treatment" | is.na(group))) |
+         (college == "umgc1" & (group == "treatment" | is.na(group))))
+
+# Check the 
+dim(read.items_wide_nsp_trt_umgc1ua2_wPersonal_2022)
+table(read.items_wide_nsp_trt_umgc1ua2_wPersonal_2022$group, 
+      read.items_wide_nsp_trt_umgc1ua2_wPersonal_2022$college, 
+      useNA = "always")
+```
+
+### Quality check
+```{r}
+### Shorten the name of the main df to "read.items_sampW22"
+read.items_sampW22 <- 
+  read.items_wide_nsp_trt_umgc1ua2_wPersonal_2022
+dim(read.items_sampW22)
+# Check the quality of the new dataframe
+# No empty rows
+nrow(read.items_sampW22)-
+  (nrow(read.items_sampW22[rowSums(is.na(read.items_sampW22))!= 
+                                    ncol(read.items_sampW22),]))
+# No missing values on IDs
+nrow(read.items_sampW22[
+  is.na(read.items_sampW22$DAACS_ID),])
+nrow(read.items_sampW22[
+  is.na(read.items_sampW22$institution_ID),])
+
+# No missing values on college
+nrow(read.items_sampW22[
+  is.na(read.items_sampW22$college),])
+
+# No missing values in readTime = the respondents who didn't take Reading Assessment
+nrow(read.items_sampW22[
+  is.na(read.items_sampW22$readTime),])
+
+min(read.items_sampW22$readCompletionDate, na.rm = T)
+max(read.items_sampW22$readCompletionDate, na.rm = T)
+```
+
+###  All items have from 232 to 297 responses 
+```{r}
+read.items_Samp2022.describe <- describe(read.items_sampW22[, 23:202])
+
+min(read.items_Samp2022.describe$n) # 232
+max(read.items_Samp2022.describe$n) # 297
+```
+
+## Sample 2022 with Demographics (n = 1598; Numgc1 = 900, Nua2 = 675)
+samp22D (read.items_samp22D) is a subset of sampW22: the first-attempt scores from all non-speedy treatment respondents who took Reading Assessment in 2022, during their first semester, AND have data on at least one out of five demographic variables.
+
+```{r}
+read.items_samp22D_newer_tmp<-
+  read.items_sampW22[!is.na(read.items_sampW22$transfer),]
+dim(read.items_samp22D_newer_tmp)
+table(read.items_samp22D_newer_tmp$college, useNA = "ifany")
+table(read.items_samp22D$college, useNA = "ifany")
+```
+
+### Quality check
+Similarly to sampW22, all discrepancies between the two versions of samp22D were due to the new columns like "Theta_read180" and "readCompletionYear").
+ 
+Compare the new version of the df with the first one (read.items_AnSamp2, saved in r-environments) to ensure that the new df has the same number of columns and rows.
+```{r}
+all.equal(colnames(read.items_samp22D), 
+          colnames(read.items_samp22D_newer_tmp))
+```
+
+Verify the column names are the same conceptually
+```{r}
+setdiff(colnames(read.items_samp22D), colnames(read.items_samp22D_newer_tmp))
+setdiff(colnames(read.items_samp22D_newer_tmp), colnames(read.items_samp22D))
+```
+
+```{r}
+#Remove the extra column
+read.items_samp22D_toEquate_tmp <- read.items_samp22D_newer_tmp %>%
+    select(-readCompletionYear)
+#Verify the column names do not differ in naming conventions (e.g., due to typos or case differences). Do not run for this script.
+# colnames(read.items_samp22D_newer_tmp) <- colnames(read.items_samp22D)
+
+# Confirm the "182 string mismatches" were due to 4 extra columns
+all.equal(colnames(read.items_samp22D), 
+          colnames(read.items_samp22D_toEquate_tmp))
+```
+Save the updated df
+```{r}
+read.items_samp22D<-read.items_samp22D_newer_tmp
+```
+
+## all_Theta-scores dataset: readBifactor2PL_umgc1ua2_all_Thetas
+Add other columns of read Theta-scores_173 and Theta-scores_180 to all_Theta-scores dataset for the comparison
+If a single respondent has non-NA values on two or three Theta-scores_m, those values are identical.
+```{r}
+names(readBifactor2PL_umgc1ua2_all_Thetas)
+```
+
+```{r}
+names(read.items_AnSamp2[1:24])# both theta scores are in AnSamp2 dataset
+names(read.items_sampW22[1:24])# both theta scores are in sampW22 dataset
+names(read.items_samp22D[1:24])# both theta scores are in samp22D dataset
+
+```
+
+Add the new Theta-scores_173 and 180 to the all_Theta-scores dataset
+
+```{r}
+readBifactor2PL_umgc1ua2_all_Thetas<-
+  merge(readBifactor2PL_umgc1ua2_all_Thetas, 
+        read.items_AnSamp2[,c("DAACS_ID", "Theta_read173", "Theta_read180")], 
+        by = "DAACS_ID", all.x = TRUE)
+readBifactor2PL_umgc1ua2_all_Thetas<-
+  merge(readBifactor2PL_umgc1ua2_all_Thetas, 
+        read.items_sampW22[,c("DAACS_ID", "Theta_read173", "Theta_read180")], 
+        by = "DAACS_ID", all.x = TRUE)
+readBifactor2PL_umgc1ua2_all_Thetas<-
+  merge(readBifactor2PL_umgc1ua2_all_Thetas, 
+        read.items_samp22D[,c("DAACS_ID", "Theta_read173", "Theta_read180")], 
+        by = "DAACS_ID", all.x = TRUE)
+
+# Columns' names
+names(readBifactor2PL_umgc1ua2_all_Thetas)
+```
+
+Rename the columns
+```{r}
+readBifactor2PL_umgc1ua2_all_Thetas <- readBifactor2PL_umgc1ua2_all_Thetas %>%
+  rename(
+    Theta_read173_AnSamp2 = Theta_read173.x,
+    Theta_read180_AnSamp2 = Theta_read180.x,
+    Theta_read173_sampW22 = Theta_read173.y,
+    Theta_read180_sampW22 = Theta_read180.y,
+    Theta_read173_samp22D = Theta_read173,
+    Theta_read180_samp22D = Theta_read180
+  )
+# New Columns' names
+names(readBifactor2PL_umgc1ua2_all_Thetas)
+```
+
+Summarize missing values in samp22D dataset
+```{r}
+colSums(is.na(read.items_samp22D[, c("Theta_read173", "Age_d24", "Age", "college", "gender", "Military", "Pell", "transfer")]))
+```
+
+## Theta173 Distribution in three samples Tendency Measures; Tendency Measures
+Note: The interquartile range (IQR) is the difference between the third quartile (Q3) and the first quartile (Q1) in a data set; it measures the spread of the middle half of a data set and is expressed as the difference between two values.The coefficient of variation (CV) is the ratio of the standard deviation (SD) to the mean of a data set; it measures the variability of a data set relative to its mean and is expressed as a percentage. They both are statistical measures of variability in a data set.  
+  
+#### No correlation with Demographic Variables: Pmax = 0.1, Correlation plots, samp22D
+Thetas do not correlate with any of 6 demographic variables
+```{r}
+# library(png)
+# library(psych)
+# Generate the pairs plot with larger font sizes and no title
+readTheta173demogr_samp22D_pairsPlot <- function() {
+  pairs.panels(
+    read.items_samp22D[, c("Theta_read173", "Age_d24", "Age", 
+                           "college", "gender", "Military", "Pell", "transfer")],
+    cex.cor = 0.75,      # Font size for correlation coefficients
+    cex.axis = 1.2,      # Font size for diagonal histograms
+    cex.labels = 1.5,    # Font size for axis labels
+    hist.col = "gray",   # Histogram color
+    main = NULL          # No title
+  )
+}
+
+# Save the pairs plot as a temporary image
+png("readTheta173demogr_samp22D_pairsPlot", width = 800, height = 600)
+readTheta173demogr_samp22D_pairsPlot()
+dev.off()
+
+readTheta173demogr_samp22D_pairsPlot()
+```
+
+##### Scatterplots
+Define scatterplots for each demographic variable and Thetas
+```{r}
+# library(ggplot2)
+# library(gridExtra)
+# library(grid)
+
+scatterplot_ageTheta173_samp22D <- ggplot(data = read.items_samp22D, aes(x = Age, y = Theta_read173)) +
+  geom_point(na.rm = TRUE) +
+  ggtitle("Theta-scores and Age")
+
+scatterplot_collegeTheta173_samp22D <- ggplot(data = read.items_samp22D, aes(x = Age, y = Theta_read173)) +
+  geom_point() +
+  facet_wrap(~college, ncol = 2) +
+  theme(legend.position = "bottom") +
+  ggtitle("Theta-scores and College")
+
+scatterplot_genderTheta173_samp22D <- ggplot(data = read.items_samp22D, aes(x = Age, y = Theta_read173)) +
+  geom_point() +
+  facet_wrap(~gender, ncol = 2) +
+  theme(legend.position = "bottom") +
+  ggtitle("Theta-scores and Gender")
+
+scatterplot_militaryTheta173_samp22D <- ggplot(data = read.items_samp22D, aes(x = Age, y = Theta_read173)) +
+  geom_point() +
+  facet_wrap(~Military, ncol = 2) +
+  theme(legend.position = "bottom") +
+  ggtitle("Theta-scores and Military Status")
+
+scatterplot_pellTheta173_samp22D <- ggplot(data = read.items_samp22D, aes(x = Age, y = Theta_read173)) +
+  geom_point() +
+  facet_wrap(~Pell, ncol = 2) +
+  theme(legend.position = "bottom") +
+  ggtitle("Theta-scores and SES (Pell)")
+
+scatterplot_transferTheta173_samp22D <- ggplot(data = read.items_samp22D, aes(x = Age, y = Theta_read173)) +
+  geom_point() +
+  facet_wrap(~transfer, ncol = 2) +
+  theme(legend.position = "bottom") +
+  ggtitle("Theta-scores and Transfer Status")
+
+scatterplot_ethnicityTheta173_samp22D <- ggplot(data = read.items_samp22D, aes(x = Age, y = Theta_read173)) +
+  geom_point() +
+  facet_wrap(~ethnicity, ncol = 2) +
+  theme(legend.position = "bottom") +
+  ggtitle("Theta-scores and Ethnicity")
+
+# Convert ggplots to grobs
+age_grob_tmp <- ggplotGrob(scatterplot_ageTheta173_samp22D)
+college_grob_tmp <- ggplotGrob(scatterplot_collegeTheta173_samp22D)
+gender_grob_tmp <- ggplotGrob(scatterplot_genderTheta173_samp22D)
+military_grob_tmp <- ggplotGrob(scatterplot_militaryTheta173_samp22D)
+pell_grob_tmp <- ggplotGrob(scatterplot_pellTheta173_samp22D)
+transfer_grob_tmp <- ggplotGrob(scatterplot_transferTheta173_samp22D)
+ethnicity_grob_tmp <- ggplotGrob(scatterplot_ethnicityTheta173_samp22D)
+
+# Include the pairs plot as an image grob
+pairs_image_grob_tmp <- rasterGrob(png::readPNG("readTheta173demogr_pairsPlot.png"), interpolate = TRUE)
+
+# Dynamically generate the plot title with sample size
+plot_title_tmp <- 
+  paste0("Relationship between read Theta Scores and Demographic Variables, UMGC1 and UA2, samp22D, n = ", nrow(read.items_samp22D))
+
+# Now create the textGrob with the dynamically generated title
+main_title_tmp <- textGrob(plot_title_tmp, gp = gpar(fontsize = 16, fontface = "bold"))
+
+# Arrange all plots in a 4x2 grid with a central title
+pdf("readUMGC1UA2_Correlations_Theta_Scores with Demographics_samp22D.pdf", width = 16, height = 8) # Landscape format
+grid.arrange(
+  main_title_tmp, 
+  pairs_image_grob_tmp, age_grob_tmp, college_grob_tmp, gender_grob_tmp,
+  military_grob_tmp, pell_grob_tmp, transfer_grob_tmp, ethnicity_grob_tmp,
+  ncol = 4,
+  layout_matrix = rbind(
+    c(1, 1, 1, 1),  # Title spans the top row
+    c(2, 3, 4, 5),  # Pairs plot and scatterplots
+    c(6, 7, 8, 9)   # Remaining scatterplots
+  ),
+  heights = c(0.1, 0.45, 0.45) # Adjust row heights
+)
+dev.off()
+
+```
+
+```{r}
+scatterplot_ageTheta173_samp22D 
+scatterplot_collegeTheta173_samp22D 
+scatterplot_genderTheta173_samp22D 
+scatterplot_militaryTheta173_samp22D 
+scatterplot_pellTheta173_samp22D 
+scatterplot_transferTheta173_samp22D 
+scatterplot_ethnicityTheta173_samp22D
+```
+
+# Missing Values Summary: 39.1% (predominantly umgc1) respondents of sampW22 have no demographic data
+1025 respondents missed data on age and other demographics ("ethnicity", "gender",  "Military", "Pell" (SES), and "transfer")
+Names of 11 columns with complete data (no missing values):
+```{r}
+read.items_sampW22_compleeteVars <- 
+  names(read.items_sampW22)[sapply(read.items_sampW22, 
+                                          function(x) all(!is.na(x)))]
+read.items_sampW22_compleeteVars
+```
+
+```{r}
+# library(naniar)
+# Create a list of the names of Demographic variables
+DemographicVars_names<- 
+  c("Age_d24", "ethnicity", "gender", "Military", "Pell", "transfer")
+# Are there missing values in the dataset?
+any_na(read.items_sampW22[, DemographicVars_names])
+# How many are there missing demographic values?
+n_miss(read.items_sampW22[,DemographicVars_names])
+prop_miss(read.items_sampW22[,DemographicVars_names])
+
+# How many are there missing age values?
+read.items_sampW22$Age_d24 %>% table(useNA = "always") %>%
+                        prop.table() %>% round(4) 
+
+# Which variables are affected? 
+read.items_sampW22[,DemographicVars_names] %>% is.na() %>% colSums()
+```
+
+Missing Values Summary
+```{r}
+# library(dplyr)
+# library(summarytools)
+
+# Define variables for selection
+var_selection_tmp <- 
+  names(read.items_sampW22)[c(2, 3, 7, 8, 10, 12:14,18, 20:203)]
+
+# Function to generate and display summary table
+variablesSummary <- function(data, title) {
+  selected_data <- data %>%
+    select(any_of(var_selection_tmp)) %>%  # Avoid errors if some variables are missing
+    mutate(across(where(is.character), as.factor)) # Convert character variables if needed
+  
+  # Generate the summary table
+  summary_table <- dfSummary(selected_data, round.digits = 2)
+  
+  # Display the summary in the Viewer pane
+  view(summary_table)
+  
+  # Render the summary in the Markdown pane
+  print(summary_table, method = "render")
+}
+
+# Generate the items summary for Analytic Sample 1
+variablesSummary(read.items_sampW22, 
+                "readItems180_sampW22_SummaryTable")
+```
+
+
+```{r}
+# Get number of missings per variable (n and %)
+miss_var_summary(read.items_sampW22[,DemographicVars_names])
+miss_var_table(read.items_sampW22[,DemographicVars_names])
+# Get number of missings per participant (n and %)
+miss_case_summary(read.items_sampW22[,DemographicVars_names])
+miss_case_table(read.items_sampW22[,DemographicVars_names])
+```
+
+## Missing Patterns and Maps
+
+```{r}
+# Calculate the sample sizes
+sampW22_n <- nrow(read.items_sampW22)
+umgc1_sampW22_n <- 
+ nrow(read.items_sampW22[read.items_sampW22$college == "umgc1", ])
+ua2_sampW22_n <- 
+  nrow(read.items_sampW22[read.items_sampW22$college == "ua2", ])
+```
+
+### Combined Sample: % demographic data missing
+2620 treatment respondents took read survey (wouldbe-AnSamp2). 
+1563   of them have age and other demographic data (AnSamp2). 
+1025 (%) respondents have no demographic data.
+```{r}
+# Combined Sample - Missing Values Map
+combined_missingMap <- 
+  vis_miss(read.items_sampW22[, DemographicVars_names]) +
+  theme(axis.text.x = element_text(angle = 80)) +
+  ggtitle(paste("Combined Sample, sampW22, n =", sampW22_n))
+combined_missingMap
+# Combined Sample - Missing Pattern
+#library(ggplotify)
+#library(finalfit)
+combined_missingPattern <-
+  as.ggplot(~missing_pattern(read.items_sampW22[, DemographicVars_names]))
+combined_missingPattern
+```
+
+### umgc1: %  respondents have no demographic data.
+1915 respondents took Reading Assessment in umgc1.
+900 of them have age and other demographic data. 
+992 (%) respondents have no demographic data.
+```{r}
+# umgc1 Sample - Missing Values Map
+umgc1_missingMap <- 
+  vis_miss(read.items_sampW22[
+    read.items_sampW22$college == "umgc1",DemographicVars_names]) +
+  theme(axis.text.x = element_text(angle = 80)) +
+  ggtitle(paste("umgc1 Sample, sampW22, n =", umgc1_sampW22_n))
+umgc1_missingMap
+# umgc1 Sample - Missing Pattern
+umgc1_missingPattern <- 
+  as.ggplot(~missing_pattern(read.items_sampW22[
+    read.items_sampW22$college == "umgc1",DemographicVars_names]))
+umgc1_missingPattern
+```
+
+### ua2 sample: %  respondents have no age data.
+705 respondents took Reading Assessment. 
+663 of them have age and demographic data. 
+33 (%) respondents have no age data.
+```{r}
+# ua2 Sample - Missing Values Map
+ua2_missingMap <- 
+  vis_miss(read.items_sampW22[read.items_sampW22$college == "ua2", 
+                                              DemographicVars_names]) +
+  theme(axis.text.x = element_text(angle = 80)) +
+  ggtitle(paste("ua2 Sample, sampW22, n =", ua2_sampW22_n))
+ua2_missingMap
+# ua2 Sample - Missing Pattern
+ua2_missingPattern <- 
+  as.ggplot(~missing_pattern(read.items_sampW22[
+    read.items_sampW22$college == "ua2", DemographicVars_names]))
+ua2_missingPattern
+
+```
+
+PDF Output
+```{r}
+# Save the plots to a PDF file
+pdf("missingValuesSummary_sampW22.pdf", width = 12, height = 8)
+on.exit(dev.off())  # Ensure device is closed on exit
+
+# Arrange plots into a 2x3 grid
+gridExtra::grid.arrange(
+  combined_missingMap, umgc1_missingMap, ua2_missingMap,
+  combined_missingPattern, umgc1_missingPattern, ua2_missingPattern,
+  ncol = 3
+)
+```
+
+# Missing Values Analyses for Would-Be-Analytic Sample 2
+Missing Values Analyses for the Would-Be-Analytic Sample 2 for DAACS Reading Assessment in 2022 (nonspeedy, treatment, umgc1 and UAlbany2)
+
+## Missingness in Age Variable statistically significantly but with a negligeble effect size affects the Theta-scores in combined sample. When the ua2 and umgc1 subsamples were analysed separately, the null-hypothesis could not be rejected.
+Null-Hypothesis: the presence of missing values in Age doesn't impact the target variable of Theta-scores.
+```{r}
+# Create a Binary Indicator for Missing Age
+read.items_sampW22$Age_missing <- 
+  ifelse(is.na(read.items_sampW22$Age), "Missing", "Not Missing")
+```
+
+### Combined sample: spurious correlation. 
+MNAR Missingness on Age affects Theta-scores in Combined Sample with a negligible effect size
+
+#### Shapiro-Wilk normality test for each group: p < 0.001
+In both groups the Theta_read173 are not normally distributed. 
+```{r}
+# Shapiro-Wilk normality test for each group
+shapiro.test(read.items_sampW22$Theta_read173
+             [read.items_sampW22$Age_missing=="Missing"])
+shapiro.test(read.items_sampW22$Theta_read173
+             [read.items_sampW22$Age_missing=="Not Missing"])
+```
+
+#### Wilcoxon rank sum test: W = 782479, p = 0.064; 
+Because the data is not normally distributed, we use a non-parametric Wilcoxon rank sum test with continuity correction; otherwise, a t-test is recommended.
+The p-value is smaller than 0.05, hence, we reject the null hypothesis, suggesting a no impact of missing values in Age on the target variable of Theta-scores.However, the effect size is negligible: Cliff's Delta = -0.043, 95%CI[-0.088, 0.003]
+Welch Two Sample t-test: p-value = 0.037
+mean in group Missing               mean in group Not Missing 
+      -0.032                             0.035
+```{r}
+wilcox_test_result <- 
+  wilcox.test(Theta_read173 ~ Age_missing,read.items_sampW22)
+print(wilcox_test_result)
+# t_test_result <- 
+t.test(Theta_read173 ~ Age_missing, read.items_sampW22)
+# print(t_test_result)
+```
+
+#### Effect Size for Median Differences is "Negligible":  Cliff's Delta = -0.043, 95%CI[-0.088, 0.003]
+The results of Cliff's Delta indicate that the difference in median Theta-scores between the missing-age and non-missing-age groups is statistically small and practically negligible. 
+```{r}
+#library(effsize)
+
+#  Cliff's Delt effect size = 0.23, 95%CI[-0.088, 0.003]
+cliff_delta_result <- cliff.delta(
+  Theta_read173 ~ Age_missing, 
+  data = read.items_sampW22
+)
+
+print(cliff_delta_result)
+
+```
+
+### umgc1: MCAR
+The missingness in Age does not seem to have an impact on Theta_read173 for the umgc1 group, according to the Wilcoxon rank-sum test. 
+
+#### Shapiro-Wilk normality test for each group: p < 0.001
+In both groups the Theta_read173 are not normally distributed. 
+```{r}
+# Shapiro-Wilk normality test for each group
+shapiro.test(read.items_sampW22$Theta_read173
+             [c(read.items_sampW22$college==
+                  "umgc1"& read.items_sampW22$Age_missing=="Missing")])
+shapiro.test(read.items_sampW22$Theta_read173
+             [c(read.items_sampW22$college==
+              "umgc1"& read.items_sampW22$Age_missing=="Not Missing")])
+```
+
+#### Wilcoxon rank sum test: 456555, p-value = 0.91 
+Because the data is not normally distributed, we use a non-parametric Wilcoxon rank sum test with continuity correction; we can't reject the null hypothesis, suggesting a no impact of missing values in Age on the target variable of Theta-scores.
+Welch Two Sample t-test: p-value = 0.79
+
+mean in group Missing               mean in group Not Missing 
+      -0.04                                -0.03
+
+Wilcoxon rank sum test with continuity correction
+```{r}
+wilcox_test_result <- 
+  wilcox.test(Theta_read173 ~ Age_missing,read.items_sampW22[
+    read.items_sampW22$college == "umgc1",])
+print(wilcox_test_result)
+# t_test_result <- 
+t.test(Theta_read173 ~ 
+         Age_missing, read.items_sampW22[
+           read.items_sampW22$college == "umgc1",])
+# print(t_test_result)
+```
+
+### ua2: MCAR
+The missingness in Age does not seem to have an impact on Theta_read173 for the ua2 group, according to the Wilcoxon rank-sum test.
+
+#### Shapiro-Wilk normality test for "missing" group: p-value = 0.028; for  "non-missing" group: p-value < 0.001
+In both groups, the Theta_read173 are not normally distributed. 
+Shapiro-Wilk normality test: in both groups the Theta_read173 are not normally distributed. 
+```{r}
+# Shapiro-Wilk normality test for each group
+shapiro.test(read.items_sampW22$Theta_read173
+             [c(read.items_sampW22$college==
+                  "ua2"& read.items_sampW22$Age_missing=="Missing")])
+shapiro.test(read.items_sampW22$Theta_read173
+             [c(read.items_sampW22$college==
+              "ua2"& read.items_sampW22$Age_missing=="Not Missing")])
+```
+
+#### Wilcoxon rank sum test with continuity correction: 11830, p-value = 0.52 
+Because the data is not normally distributed, we use a non-parametric Wilcoxon rank sum test with continuity correction; we can't reject the null hypothesis, suggesting a no impact of missing values in Age on the target variable of Theta-scores.
+Welch Two Sample t-test: p-value = 0.55
+
+mean in group Missing               mean in group Not Missing 
+      0.2                                  0.12
+      
+```{r}
+wilcox_test_result <- 
+  wilcox.test(Theta_read173 ~ 
+                Age_missing,read.items_sampW22[
+                    read.items_sampW22$college == "ua2",])
+print(wilcox_test_result)
+# t_test_result <- 
+t.test(Theta_read173 ~ 
+         Age_missing, read.items_sampW22[
+           read.items_sampW22$college == "ua2",])
+# print(t_test_result)
+```
+
+## Missingness on all Demographic Variables is systematic. MCAR rejected
+
+### Little’s MCAR Test for categorical variables: MCAR rejected due to systematic college missingness
+Given the high statistic value and low p-value, confirm that the data is not missing completely at random in the combined sample both college subsamples.
+
+#### Combined Sample: MCAR is rejected, p < 0.001: 1008 (39.1%) of 2620 students miss all demographic variables.
+
+1008 respondents missed all 6 demographic variables
+41 respondents missed one of 6 demographic variables
+
+The hypothesis of MCAR is rejected; Demographic data are missed systematically by the college variable.
+Little’s (1988) statistical test for missing completely at random (MCAR) data.The null hypothesis in this test is that the data is MCAR, and the test statistic is a chi-squa2red value. 
+```{r}
+mcar_test(read.items_sampW22[
+  ,DemographicVars_names])
+```
+
+#### umgc1: MCAR is rejected, p < 0.01: 51.8% respondents miss all demographic data  
+```{r}
+mcar_test(read.items_sampW22
+      [read.items_sampW22$college=="umgc1",
+        DemographicVars_names])
+```
+
+#### ua2: MCAR is rejected, p < 0.0001: 3.9% of respondents miss all 6 demographic variables
+30 respondnts missed all 6 demographic variables
+3 respondents missed demographic variables (except for transfer)
+10 respondents missed military variable only 
+
+```{r}
+mcar_test(read.items_sampW22
+      [read.items_sampW22$college=="ua2",
+        DemographicVars_names])
+```
+
+### Missing Age across Colleges, Chi-square tests: MNAR. 97.2% of the respondents who missed all demographic variables were UMGC1 students.
+
+The hypothesis of MCAR is rejected; Age and other demographic data are missed systematically by the college variable.Chi-square test loop for each factor (categorical) variable results in error because college has no missing values, and the remaining compared variables have a single pattern of missingness.
+
+An individual Chi-squared test produced a p-value far below 0.05; hence, we reject the null hypothesis and assume a significant association between the variables college and Age_d24.
+```{r}
+chisq.test(read.items_sampW22$college, read.items_sampW22$Age_d24)
+```
+
+### Omnibus tests for Continuous (external) Variables: MNAR, p < 0.01. The same 1008 respondents miss all academic information (credit-related and GPA-term values). 
+Do not run (it's the same as Little's test)
+The hypothesis of MCAR is rejected. Academic data are missed systematically by the college variable.
+Define explanatory confounding numerical (continuous) variables for missing data analyses
+```{r}
+explanatory_num <- c("Age", "credits_attempted_f22", "credits_earned_f22", 
+            "credits_transferred", "gpa_term_f22", "Theta_read173")
+```
+
+#### Combined Sample: MCAR. Hawkins test of normality and homoscedasticity: p < 0.001; non-parametric test of homoscedasticity:  p = 0.67 
+The data is missed non-randomly at 0.05 significance level. 
+```{r}
+read.items_sampW22 %>% 
+  select(all_of(explanatory_num)) %>% 
+  MissMech::TestMCARNormality()
+```
+
+#### umgc1: MCAR. Hawkins test: p < 0.001; non-parametric test of homoscedasticity:  p = 0.71 
+There is not sufficient evidence to reject MCAR at 0.05 significance level (see the non-parametric test).
+Normality is questionable in umgc1 data (as indicated), hence, it’s safer to use the results of non-parametric methods.
+Based on the non-parametric results, we can proceed with the assumption of MCAR at 0.05 significance level (see the non-parametric test).
+```{r}
+read.items_sampW22[read.items_sampW22$college=="umgc1",]%>% 
+  select(all_of(explanatory_num)) %>% 
+  MissMech::TestMCARNormality()
+```
+
+#### ua2: MCAR; Hawkins test: p < 0.001; non-parametric test of homoscedasticity:  p = 0.17 
+There is not sufficient evidence to reject MCAR at 0.05 significance level (see the non-parametric test).
+Normality is questionable in umgc1 data (as indicated), hence, it’s safer to use the results of non-parametric methods.
+Based on the non-parametric results, we can proceed with the assumption of MCAR at 0.05 significance level (see the non-parametric test).
+
+```{r}
+read.items_sampW22[read.items_sampW22$college=="ua2",]%>% 
+  select(all_of(explanatory_num)) %>% 
+  MissMech::TestMCARNormality()
+```
+
+# Analytic Sample 2, n = 1563  ; Numgc1 = 900, Nua2 = 663
+Analytic Sample 2 (read.items_AnSamp2) is a subset of samp22D: the first-attempt scores from all non-speedy treatment respondents who took Reading Assessment in 2022, during their first semester, AND have data on age variables.
+Similarly to sampW22 and AnSamp 2, all discrepancies between the two versions of AnSamp2 were due to the new four columns ("readCompletionYear", "Theta_read173", "Theta_read180" , and "Age_missing")
+```{r}
+read.items_AnSamp2_newer_tmp<-
+  read.items_samp22D[complete.cases(read.items_samp22D[
+      ,c("Age_d24", "gender", "ethnicity", "transfer", "Pell", "Military")]), ]
+dim(read.items_AnSamp2_newer_tmp)
+table(read.items_AnSamp2_newer_tmp$college, useNA = "ifany")
+table(read.items_AnSamp2$college, useNA = "ifany")
+all.equal(colnames(read.items_AnSamp2), 
+          colnames(read.items_AnSamp2_newer_tmp))
+# Verify the column names are the same conceptually
+setdiff(colnames(read.items_AnSamp2), colnames(read.items_AnSamp2_newer_tmp))
+setdiff(colnames(read.items_AnSamp2_newer_tmp), colnames(read.items_AnSamp2))
+```
+
+```{r}
+#Remove the extra columns
+read.items_AnSamp2_toEquate_tmp <- read.items_AnSamp2_newer_tmp %>%
+    select(-readCompletionYear, 
+           -Theta_read173, -Theta_read180)
+# Confirm the column names do not differ in naming conventions (e.g., due to typos or case differences), and the "182 string mismatches" were due to 4 columns that do not exist in the earlier version of the df:
+all.equal(colnames(read.items_AnSamp2), 
+          colnames(read.items_AnSamp2_toEquate_tmp))
+```
+
+Save the updated df
+```{r}
+read.items_AnSamp2<-read.items_AnSamp2_newer_tmp
+```
+
+## Descriptives for AnSamp2
+All students who took Reading Assessment AND have a non-missing value on Age
+"read.items_AnSamp2" (n=1563) includes the reading item-responses (m = 180) from 663 ua2 students and 900 umgc1 students. Only the first attempts of the read survey (n=1563) are included in the given script.
+```{r}
+names(read.items_AnSamp2)
+```
+
+```{r}
+str(read.items_AnSamp2)
+```
+
+```{r}
+dim(read.items_AnSamp2)
+table(read.items_AnSamp2$college, useNA = "ifany")
+```
+
+```{r}
+head(read.items_AnSamp2) # it looks ok
+```
+
+### No NA on age variable; 23 NAs on gender, 9 NAs on military 
+```{r}
+describe_read.items_AnSamp2<-
+  describe(read.items_AnSamp2)
+describe_read.items_AnSamp2_ua22<-
+  describe(read.items_AnSamp2
+           [read.items_AnSamp2$college=="ua2",])
+describe_read.items_AnSamp2_umgc1<-
+  describe(read.items_AnSamp2
+           [read.items_AnSamp2$college=="umgc1",])
+describe_read.items_AnSamp2
+```
+
+# Close-to-normal Distribution of Theta Scores using 173 Items
+The histograms of Theta173-scores for all four samples show a negatively skewed distribution. The density plot further illustrates almost fully overlapping distribution of Theta-scores across the three samples.
+
+## Histograms 
+```{r}
+# library(ggplot2)
+# library(gridExtra)
+# library(dplyr)
+
+# Create histograms for  four samples
+# Function to create a histogram with legend and left-aligned footnote for SD
+create_histogram <- function(data, variable, mean_value, sd_value, title_prefix, output_file) {
+  # Convert the variable name to a symbol for dynamic use in ggplot2
+  variable_sym <- rlang::sym(variable)
+  
+  # Ensure non-exponential format for mean and SD
+  mean_str <- sprintf("%.4f", mean_value)
+  mean_sd_minus_str <- sprintf("%.4f", mean_value - sd_value)
+  mean_sd_plus_str <- sprintf("%.4f", mean_value + sd_value)
+  sd_str <- sprintf("%.4f", sd_value)
+
+  # Create the histogram
+  hist_plot <- ggplot(data, aes(x = !!variable_sym)) +
+    geom_histogram(
+      binwidth = 0.5,
+      fill = "lightblue",
+      color = "black",
+      alpha = 0.7
+    ) +
+    geom_vline(aes(xintercept = mean_value, color = "Mean"), 
+               linetype = "dashed", size = 1) +
+    geom_vline(aes(xintercept = mean_value + sd_value, color = "Mean + SD"), 
+               linetype = "dotted", size = 1) +
+    geom_vline(aes(xintercept = mean_value - sd_value, color = "Mean - SD"), 
+               linetype = "dotted", size = 1) +
+    scale_color_manual(
+      name = NULL,  # Remove legend title
+      values = c("Mean" = "black", "Mean - SD" = "black", "Mean + SD" = "black"),
+      labels = c(
+        paste0("Mean = ", mean_str),
+        paste0("Mean - SD = ", mean_sd_minus_str),
+        paste0("Mean + SD = ", mean_sd_plus_str)
+      )
+    ) +
+    labs(
+      title = paste0(title_prefix, " (n = ", nrow(data), ")"),
+      x = variable,
+      y = "Frequency",
+      caption = paste0("SD = ", sd_str)  # Add left-aligned footnote for SD
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = c(0.35, 0.95), # Place legend in upper-right corner
+      legend.justification = c("right", "top"),
+      legend.background = element_blank(),  # No frame around legend
+      legend.key = element_blank(),  # No key background
+      plot.caption = element_text(hjust = 0, size = 10, face = "italic")  # Left-aligned footnote
+    )
+  
+  # # Save the plot as a PDF
+  # ggsave(
+  #   filename = output_file,
+  #   plot = hist_plot,
+  #   width = 8,
+  #   height = 6
+  # )
+  
+  # Display the plot inline in R Markdown or RStudio Plots pane
+  hist_plot
+}
+
+# Create histograms
+ThetaR173_hist_AnSamp1<-create_histogram(
+  data = Theta_read173,
+  variable = "Theta_read173",
+  mean_value = mean(Theta_read173$Theta_read173),
+  sd_value = sd(Theta_read173$Theta_read173),
+  title = "AnSamp1: Theta173 Scores" ,
+  output_file = "ThetaR173_AnSamp1_histogram.pdf"
+)
+
+ThetaR173_hist_AnSamp1 <- create_histogram(
+  data = read.items_AnSamp1,
+  variable = "Theta_read173",
+  mean_value = mean(read.items_AnSamp1$Theta_read173),
+  sd_value = sd(read.items_AnSamp1$Theta_read173),
+  title_prefix = "AnSamp1: Theta173-scores"
+)
+
+ThetaR173_hist_sampW22 <- create_histogram(
+  data = read.items_sampW22,
+  variable = "Theta_read173",
+  mean_value = mean(read.items_sampW22$Theta_read173),
+  sd_value = sd(read.items_sampW22$Theta_read173),
+  title_prefix = "sampW22: Theta173-scores"
+)
+
+ThetaR173_hist_samp22D <- create_histogram(
+  data = read.items_samp22D,
+  variable = "Theta_read173",
+  mean_value = mean(read.items_samp22D$Theta_read173),
+  sd_value = sd(read.items_samp22D$Theta_read173),
+  title_prefix = "samp22D: Theta173-scores"
+)
+
+ThetaR173_hist_AnSamp2 <- create_histogram(
+  data = read.items_AnSamp2,
+  variable = "Theta_read173",
+  mean_value = mean(read.items_AnSamp2$Theta_read173),
+  sd_value = sd(read.items_AnSamp2$Theta_read173),
+  title_prefix = "AnSamp2: Theta173cmd-scores"
+)
+
+ThetaR173_hist_AnSamp1 
+ThetaR173_hist_sampW22 
+ThetaR173_hist_samp22D
+ThetaR173_hist_AnSamp2
+```
+
+## Density Plots
+```{r}
+# Combine data for density plot
+combined_data_tmp <- bind_rows(
+  read.items_AnSamp1 %>% mutate(Sample = "AnSamp1"),
+  read.items_sampW22 %>% mutate(Sample = "sampW22"),
+  read.items_samp22D %>% mutate(Sample = "samp22D"),
+  read.items_AnSamp2 %>% mutate(Sample = "AnSamp2")
+)
+
+ThetaR173_densityPlot <- ggplot(combined_data_tmp, aes(x = Theta_read173, color = Sample, fill = Sample)) +
+  geom_density(alpha = 0.4) +
+  labs(
+    title = "Density Plot: Theta173-scores",
+    x = "Theta-scores",
+    y = "Density"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+# Arrange the density plot and 3 histograms in a grid and save to PDF
+pdf("Read Theta_Scores173_Histograms_Density.pdf", width = 11, height = 8.5)
+grid.arrange(
+  ThetaR173_densityPlot,
+  ThetaR173_hist_AnSamp1,
+  ThetaR173_hist_sampW22,
+  ThetaR173_hist_AnSamp2,
+   nrow = 2
+)
+
+# Arrange 4 histograms in a grid and save to PDF
+pdf("Read Theta_Scores173_Histograms.pdf", width = 11, height = 8.5)
+grid.arrange(
+  ThetaR173_hist_AnSamp1,
+  ThetaR173_hist_sampW22,
+  ThetaR173_hist_samp22D,
+  ThetaR173_hist_AnSamp2,
+   nrow = 2
+)
+
+dev.off()
+
+ThetaR173_densityPlot
+```
+Note: The plot does not end abruptly
+```{r}
+sort(read.items_AnSamp1$Theta_read173, decreasing = TRUE)[1:10]
+sort(read.items_AnSamp2$Theta_read173, decreasing = TRUE)[1:10]
+sort(read.items_sampW22$Theta_read173, decreasing = TRUE)[1:10]
+```
+
+# Save all data in a single file 
+```{r}
+#save.image("D:/Dropbox/DAACS-Validity/Analyses/read/Reading_dataClean-umgc1ua2_3.RData")
+save.image("C:/Users/orosc/OneDrive - University at Albany - SUNY/My DAACS/read/read_dataClean-umgc1ua2_3.RData")
+```

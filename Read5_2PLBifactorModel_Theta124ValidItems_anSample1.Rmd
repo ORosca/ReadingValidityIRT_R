@@ -1,0 +1,687 @@
+---
+title: "Theta-scores via IRT Analyses from 124 valid reading items and Analitic Sample 1, IES DAACS Reading Assessment, May 2022 - May 2023, umgc1-and-ua2 Combined Sample, n = 4523"
+author: "Oxana Rosca"
+date: "`r Sys.Date()`"
+output:
+  word_document:
+    toc: true
+    toc_depth: 6
+    reference_docx: "C:/Users/orosc/OneDrive - University at Albany - SUNY/My DAACS/WordDocMarkdownTemplate.docx"
+  html_document:
+    toc: true
+    toc_depth: 6
+    theme: readable
+---
+
+# Purpose: Obtain Theta-scores via Bifactor IRT Model Analyses of DAACS Reading Assessment Scores from the Analytic Sample 1 using 124 "valid" items (with "good" item parameters and without DIF for age groups) from DAACS Reading Assessment. The data was collected in May 2022 - May 2023 (first attempt, nonspeedy, treatment, UMGC1 and UAlbany2). IES project, 2022-2023. 
+
+# Results: The 124 -item pool has acceptable parameters and fits the 2PL bifactor model better than the complete pool of items (k = 180) or the reduced pool of items with good psychometric parameters (k = 173).
+
+
+# DAACS reading Assessment
+DAACS Reading Assessment consists of 30 reading passages and 180 dichotomous items (6 items per passage). Each respondent answered to 18 items (k_admin = 18 items). For 2022-2023 data-collection via reading assessment, we used a non-adaptive multistage testing design.
+
+# Participants
+A total of 5447 participants completed at least one DAACS assessment, including 4152 (76%) from UMGC1 and 1295 (24%) from UA2. All participants had both a DAACS-assigned ID (DAACS_ID) and an institution-assigned ID.
+For the reading assessment specifically, 4626 respondents participated: 3894 (84%) from UMGC1 and 732 (16%) from UA2. The dataset includes all 4626 participants, in a clean combined dataset prepared for analysis.
+
+# Analytic Sample 1
+
+## Students: Analytic Sample 1 (AnSamp1), n = 4523
+  Purpose: For IRT analyses.
+  Composition: Includes first-attempt scores from 3798 (84%) UMGC1 and 725 (16%) UA2 non-speedy respondents.
+  Data: Collected between May 2022 and May 2023, including all non-speedy respondents' reading scores from their first attempts.
+The dataset "read.itemsONLY_AnSamp1" includes 180 items' scores (Q001–Q180) but excludes student IDs and other variables.
+A detailed dataframe "read.items_AnSamp1" includes 200 columns:180 item scores, 2 ID variables,	18 personal variables, such as reading total scores, dichotomous variables (e.g., gender, age group [below or above 24 years], and college [UMGC or UA2]).
+
+## Items  
+124 (good) items that have no DIF on age and have a significant positive correlation with Theta scores from 180- and 173-item bifactor models, according to logistic regression analyses with graphic representations.
+The "good" items (m = 124) met the following characteristics:
+  a-parameters between 0.36 and 2.5
+  Standard Errors (SEs) for a-par smaller than 1.27
+  b-parameters between -2.3 and +1.8
+  SEs for b-par smaller than 1
+  showed no DIF on the grouping variable of age
+"good" items (m = 124): Q003, Q005, Q008, Q013, Q015, Q017, Q019, Q020, Q022, Q025: Q027, Q029, Q031:Q035, Q037:Q039, Q045, Q046, Q048, Q049, Q051:Q054, Q057:Q059, Q061, Q063:Q068, Q070, Q073:Q078, Q080, Q082, Q084:Q087, Q089, Q091, Q092, Q095:Q098, Q100, Q101, Q103:Q105, Q107, Q109:Q117, Q119, Q120, Q123:Q134, Q136:Q141, Q143:Q146, Q148, Q150, Q151, Q154:Q160, Q162:Q164, Q166, Q167, Q169:Q171, Q173:Q180.
+
+# R-packages
+```{r}
+library(car)
+library(dplyr)
+library(ggplot2)
+library(mirt)
+library(openxlsx)
+library(reshape2)
+library(tidyr)
+```
+
+# Data
+
+```{r}
+#Load the files with clean reading data 
+#load("D:/Dropbox/DAACS-Validity/Analyses/read/read_dataClean-umgc1ua2_4.RData")
+load("C:/Users/orosc/OneDrive - University at Albany - SUNY/My DAACS/read/read_dataClean-umgc1ua2_4.RData")
+```
+
+# Age marginal table for AnSamp1
+```{r}
+read_College_AnSamp1_tb
+```
+
+# College*age contingency table for AnSamp1
+```{r}
+read_Age_d24_AnSamp1_college_tb = Propensities_TwoVars(
+    read.items_AnSamp1,
+    "Age_d24",
+    "college"
+  )
+read_Age_d24_AnSamp1_college_tb
+```
+
+# 124-item Bifactor models: 56 items were removed due to DIF for age and/or poor aG-parameters (< 0.3 or > 4)
+IRT Analyses of Reading Items using Bifactor Models (with grouping in testlets)
+ 
+Subset 124 "good" or "valid" items 
+```{r}
+# library(maditr)
+# library(dplyr)
+read.items_124valid_umgc1ua2 <- read.itemsONLY_AnSamp1 %>% 
+  select(Q003, Q005, Q008, Q013, Q015, Q017, Q019, Q020, Q022, Q025:Q027, Q029, Q031:Q035, Q037:Q039, Q045, Q046, Q048, Q049, Q051:Q054, Q057:Q059, Q061, Q063:Q068, Q070, Q073:Q078, Q080, Q082, Q084:Q087, Q089, Q091, Q092, Q095:Q098, Q100, Q101, Q103:Q105, Q107, Q109:Q117, Q119, Q120, Q123:Q134, Q136:Q141, Q143:Q146, Q148, Q150, Q151, Q154:Q160, Q162:Q164, Q166, Q167, Q169:Q171, Q173:Q180)
+```
+
+
+The items are organized into testlets by being sorted in ascending order:
+```{r}
+names(read.items_124valid_umgc1ua2) 
+# Check if column names are in increasing order
+all(diff(as.numeric(gsub("Q", "", names(read.items_124valid_umgc1ua2)))) > 0) # TRUE
+```
+
+Create a numeric vector to organize items into testlets
+```{r}
+readTestletModelVector_124 <- c(1,  1,  2,  3,  3,  3, 4, 4,  4, 5,  5,  5, 5,  6, 6, 6,  6,  6,  7,  7,  7, 8, 8,  8, 9,  9,  9,  9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 13, 13, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18, 19, 19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 25, 25, 25, 25, 26, 26, 26, 26, 27, 27, 27, 27, 27, 28, 28, 28, 28, 29, 29, 29, 29, 29, 30, 30, 30, 30, 30, 30)
+```
+
+## 1PL readBifactor model
+```{r}
+readBifactor1PL_124<-
+  bfactor(read.items_124valid_umgc1ua2,readTestletModelVector_124,
+                             itemtype = 'Rasch', TOL = 1e-03,
+                             SE = TRUE,
+                             accelerate = 'none',
+                             technical = list(NCYCLES = 2000))
+extract.mirt(readBifactor1PL_124,"converged")
+readBifactor1PL_124
+```
+
+## 2PL readBifactor model fits better 
+```{r}
+readBifactor2PL_124<-
+  bfactor(read.items_124valid_umgc1ua2,readTestletModelVector_124,
+                             itemtype = '2PL', TOL = 1e-03,
+                             SE = TRUE,
+                             accelerate = 'none',
+                             technical = list(NCYCLES = 2000))
+extract.mirt(readBifactor2PL_124,"converged")
+readBifactor2PL_124
+```
+
+### ANOVA for nested models: 2PL Model fits better than 1PL:p-value < 0.01 
+```{r}
+anova(readBifactor1PL_124,readBifactor2PL_124)
+```
+
+#### 124-item model fits better than 173- and 180-item models (smaller AIC, SABIC, and BIC values and a greater logLik value)
+```{r}
+anova(readBifactor1PL_124,readBifactor1PL_173)
+```
+
+### Local Dependency Residuals improved: 124-items model fits better than 173-item models
+However, all three models presented not perfect LD statistics likely due to the testlet effect.
+
+Local Dependency Residuals Summaries for 124 Reading Items (2PLModel-based)
+Standardized values of χ2 and G2 (upper diagonal) should be below 0.1.
+Phil Chalmers "... that advice does come from my experiences, and similar
+cutoffs have been proposed in the linear factor analysis literature when
+inspecting standardized residuals."
+Extract the LD Residuals statistics for 124-item model
+```{r}
+readBifactor2PL_124_ResidualsLDX2<-residuals(readBifactor2PL_124,QMC=TRUE)
+```
+
+```{r}
+readBifactor2PL_124_ResidualsLDG2<-
+  residuals(readBifactor2PL_124,QMC=TRUE,type="LDG2")
+```
+
+Extract the summary statistics for 124-item model
+```{r}
+# LDX2 Residuals
+LDX2Residuals_summary_124 <- summary(as.vector(readBifactor2PL_124_ResidualsLDX2))
+LDX2Residuals_summary_124
+```
+
+```{r}
+# LDG2 Residuals
+LDG2Residuals_summary_124 <- summary(as.vector(readBifactor2PL_124_ResidualsLDG2))
+LDG2Residuals_summary_124
+```
+
+Extract the summary statistics for 180-item model
+```{r}
+# LDX2 Residuals
+LDX2Residuals_summary_124 <- summary(as.vector(readBifactor2PL_124_ResidualsLDX2))
+LDX2Residuals_summary_124
+```
+
+```{r}
+# LDG2 Residuals
+LDG2Residuals_summary_173 <- summary(as.vector(readBifactor2PL_173_ResidualsLDG2))
+LDG2Residuals_summary_173
+```
+
+Extract the summary statistics for 173-item model
+```{r}
+# LDX2 Residuals
+LDX2Residuals_summary_173 <- summary(as.vector(readBifactor2PL_173_ResidualsLDX2))
+LDX2Residuals_summary_173
+```
+
+```{r}
+# LDG2 Residuals
+LDG2Residuals_summary_173 <- summary(as.vector(readBifactor2PL_173_ResidualsLDG2))
+LDG2Residuals_summary_173
+```
+
+```{r}
+write.xlsx(readBifactor2PL_124_ResidualsLDX2, 
+           file = "readBifactor2PL_124_ResidualsLDX2.xlsx", rowNames = TRUE)
+write.xlsx(readBifactor2PL_124_ResidualsLDG2, 
+           file = "readBifactor2PL_124_ResidualsLDG2.xlsx", rowNames = TRUE)
+```
+
+### Parameters
+```{r} 
+# Extract parameters as a data frame 
+readBifactor2PL_124_coeff <- 
+  coef(readBifactor2PL_124, as.data.frame = TRUE, printSE = TRUE)
+# Confirm the structure of 'readBifactor2PL_124_coeff'
+str(readBifactor2PL_124_coeff)
+# If not already a data frame, convert it explicitly
+readBifactor2PL_124_coeff <- as.data.frame(readBifactor2PL_124_coeff)
+# Round all numeric values to two decimal places
+readBifactor2PL_124_coeff <- round(readBifactor2PL_124_coeff, 2)
+str(readBifactor2PL_124_coeff)
+# Filter out rows where 'par' is equal to 0
+readBifactor2PL_124_coeff <- 
+  readBifactor2PL_124_coeff[readBifactor2PL_124_coeff$par != 0, ,
+                            drop = FALSE]  # Keep as a data frame
+# Remove rows with any missing values
+readBifactor2PL_124_coeff <- 
+  readBifactor2PL_124_coeff[complete.cases(readBifactor2PL_124_coeff), ,
+                            drop = FALSE]  # Ensure it's still a data frame
+# Confirm the final structure
+str(readBifactor2PL_124_coeff)
+#Save the coefficients to external file:
+write.csv(readBifactor2PL_124_coeff,
+          "readBifactor2PL_124_coeff.csv",quote=F,row.names=T)
+```
+
+
+### Theta scores Distribution was negatively skewed
+
+#### Theta124: M = 0.0001, SD = 0.76
+Central tendency characteristics of the Theta scores from the 124-item model
+```{r}
+Theta_read124<-fscores(readBifactor2PL_124,method="EAP", QMC=TRUE, 
+          full.scores=TRUE,full.scores.SE=TRUE)
+# Ensure the data is in a data frame format
+Theta_read124 <- data.frame(Theta_read124)
+
+# Add the variable of DAACS_ID to the dataframe with thetas:
+Theta_read124$DAACS_ID <- read.items_AnSamp1DAACS_ID_vector
+# Rename the columns
+names(Theta_read124)[1] <- "Theta_read124"
+names(Theta_read124)[32] <- "SE_Theta_read124"
+names(Theta_read124)
+```
+
+```{r}
+summary(fscores(readBifactor2PL_124, QMC=TRUE))
+```
+
+
+
+
+```{r}
+#Save theta estimates to external file:
+write.csv(Theta_read124,
+          "Theta_read124.csv",quote=F,row.names=F)
+# Calculate mean and standard deviation
+mean_valueThetas_124 <- mean(Theta_read124$Theta_read124)
+sd_valueThetas_124 <- sd(Theta_read124$Theta_read124)
+mean_valueThetas_124 # 0.000076
+sd_valueThetas_124 # 0.76
+```
+
+##### Add theta124 to all four samples' dataframes
+```{r}
+read.items_AnSamp1<-merge(read.items_AnSamp1,Theta_read124[,c("Theta_read124","DAACS_ID")])
+read.items_sampW22<-merge(read.items_sampW22,Theta_read124[,c("Theta_read124","DAACS_ID")])
+read.items_AnSamp2<-merge(read.items_AnSamp2,Theta_read124[,c("Theta_read124","DAACS_ID")])
+read.items_samp22D<-merge(read.items_samp22D,Theta_read124[,c("Theta_read124","DAACS_ID")])
+# Move the theta scores to the beginning of the dataframes
+read.items_AnSamp1<- 
+  read.items_AnSamp1[,c(1, 22, 2:19,204, 21, 203,20, 23:202)]
+read.items_AnSamp2<- 
+  read.items_AnSamp2[,c(1, 22, 2:19,204, 21, 203,20, 23:202)]
+read.items_sampW22<- 
+  read.items_sampW22[,c(1, 22, 204, 2:19,205, 21, 203,20, 23:202)]
+read.items_samp22D<- 
+  read.items_samp22D[,c(1, 22, 2:19,204, 21, 203,20, 23:202)]
+```
+
+##### Add theta124 to all_Theta-scores dataset
+Add theta124 to readBifactor2PL_umgc1ua2_all_Thetas with Theta-scores from 173- and 180-item models.
+If a single respondent has non-NA values on two or three Theta-scores_m, those values must be identical.
+```{r}
+names(readBifactor2PL_umgc1ua2_all_Thetas)
+```
+
+theta124 was successfully placed in all 4 datasets
+```{r}
+names(read.items_AnSamp1[1:24])
+names(read.items_AnSamp2[1:24])
+names(read.items_sampW22[1:24])
+names(read.items_samp22D[1:24])
+
+```
+
+```{r}
+readBifactor2PL_umgc1ua2_all_Thetas<-
+  merge(readBifactor2PL_umgc1ua2_all_Thetas, 
+        read.items_AnSamp1[,c("DAACS_ID", "Theta_read124")], 
+        by = "DAACS_ID", all.x = TRUE)
+readBifactor2PL_umgc1ua2_all_Thetas<-
+  merge(readBifactor2PL_umgc1ua2_all_Thetas, 
+        read.items_AnSamp2[,c("DAACS_ID", "Theta_read124")], 
+        by = "DAACS_ID", all.x = TRUE)
+readBifactor2PL_umgc1ua2_all_Thetas<-
+  merge(readBifactor2PL_umgc1ua2_all_Thetas, 
+        read.items_sampW22[,c("DAACS_ID", "Theta_read124")], 
+        by = "DAACS_ID", all.x = TRUE)
+readBifactor2PL_umgc1ua2_all_Thetas<-
+  merge(readBifactor2PL_umgc1ua2_all_Thetas, 
+        read.items_samp22D[,c("DAACS_ID", "Theta_read124")], 
+        by = "DAACS_ID", all.x = TRUE)
+
+# Columns' names
+names(readBifactor2PL_umgc1ua2_all_Thetas)
+```
+
+Rename the columns
+
+```{r}
+# Ensure all column names are unique
+names(readBifactor2PL_umgc1ua2_all_Thetas) <- make.unique(names(readBifactor2PL_umgc1ua2_all_Thetas))
+
+# Rename the columns after merging
+readBifactor2PL_umgc1ua2_all_Thetas <- readBifactor2PL_umgc1ua2_all_Thetas %>%
+  rename(
+    Theta_read124_AnSamp1 = Theta_read124.x,
+    Theta_read124_AnSamp2 = Theta_read124.y,
+    Theta_read124_sampW22 = Theta_read124.x.1,
+    Theta_read124_samp22D = Theta_read124.y.1
+  )
+
+# Check the new column names
+names(readBifactor2PL_umgc1ua2_all_Thetas)
+
+```
+
+Re-order the columns
+```{r}
+#library(dplyr)
+
+# Reorder columns
+readBifactor2PL_umgc1ua2_all_Thetas <- readBifactor2PL_umgc1ua2_all_Thetas %>%
+  select(
+    DAACS_ID, 
+    Theta_read124_AnSamp1, Theta_read124_AnSamp2, Theta_read124_sampW22, Theta_read124_samp22D,
+    Theta_read173_AnSamp1, Theta_read173_AnSamp2, Theta_read173_sampW22, Theta_read173_samp22D,
+    Theta_read180_AnSamp1, Theta_read180_AnSamp2, Theta_read180_sampW22, Theta_read180_samp22D,
+    SE_Theta_read173_AnSamp1, SE_Theta_read180_AnSamp1
+  )
+
+# Check the new column order
+names(readBifactor2PL_umgc1ua2_all_Thetas)
+
+```
+
+#### Histograms of Theta-scores
+```{r}
+# Function to create a histogram with legend and left-aligned footnote for SD
+create_histogram <- function(data, variable, mean_value, sd_value, title_prefix, output_file) {
+  # Convert the variable name to a symbol for dynamic use in ggplot2
+  variable_sym <- rlang::sym(variable)
+  
+  # Ensure non-exponential format for mean and SD
+  mean_str <- sprintf("%.4f", mean_value)
+  mean_sd_minus_str <- sprintf("%.4f", mean_value - sd_value)
+  mean_sd_plus_str <- sprintf("%.4f", mean_value + sd_value)
+  sd_str <- sprintf("%.4f", sd_value)
+
+  # Create the histogram
+  hist_plot <- ggplot(data, aes(x = !!variable_sym)) +
+    geom_histogram(
+      binwidth = 0.5,
+      fill = "lightblue",
+      color = "black",
+      alpha = 0.7
+    ) +
+    geom_vline(aes(xintercept = mean_value, color = "Mean"), 
+               linetype = "dashed", size = 1) +
+    geom_vline(aes(xintercept = mean_value + sd_value, color = "Mean + SD"), 
+               linetype = "dotted", size = 1) +
+    geom_vline(aes(xintercept = mean_value - sd_value, color = "Mean - SD"), 
+               linetype = "dotted", size = 1) +
+    scale_color_manual(
+      name = NULL,  # Remove legend title
+      values = c("Mean" = "black", "Mean - SD" = "black", "Mean + SD" = "black"),
+      labels = c(
+        paste0("Mean = ", mean_str),
+        paste0("Mean - SD = ", mean_sd_minus_str),
+        paste0("Mean + SD = ", mean_sd_plus_str)
+      )
+    ) +
+    labs(
+      title = paste0(title_prefix, " (n = ", nrow(data), ")"),
+      x = variable,
+      y = "Frequency",
+      caption = paste0("SD = ", sd_str)  # Add left-aligned footnote for SD
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = c(0.35, 0.95), # Place legend in upper-right corner
+      legend.justification = c("right", "top"),
+      legend.background = element_blank(),  # No frame around legend
+      legend.key = element_blank(),  # No key background
+      plot.caption = element_text(hjust = 0, size = 10, face = "italic")  # Left-aligned footnote
+    )
+  
+  # Save the plot as a PDF
+  ggsave(
+    filename = output_file,
+    plot = hist_plot,
+    width = 8,
+    height = 6
+  )
+  
+  # Display the plot inline in R Markdown or RStudio Plots pane
+  hist_plot
+}
+
+# Example usage
+# Assuming your dataframe is `read.items_AnSamp1` with a variable `Theta_read124`
+readBifactor2PL_124_AnSamp1_theta_hist<-create_histogram(
+  data = read.items_AnSamp1,
+  variable = "Theta_read124",
+  mean_value = mean(read.items_AnSamp1$Theta_read124),
+  sd_value = sd(read.items_AnSamp1$Theta_read124),
+  title_prefix = "Theta124 DAACS Reading Scores from AnSamp1",
+  output_file = "readBifactor2PL124_AnSamp1_theta124_histogram.pdf"
+)
+readBifactor2PL_173_AnSamp1_theta_hist<-create_histogram(
+  data = read.items_AnSamp1,
+  variable = "Theta_read173",
+  mean_value = mean(read.items_AnSamp1$Theta_read173),
+  sd_value = sd(read.items_AnSamp1$Theta_read173),
+  title_prefix = "Theta173 DAACS Reading Scores from AnSamp1",
+  output_file = "readBifactor2PL173_AnSamp1_theta173_histogram.pdf"
+)
+readBifactor2PL_180_AnSamp1_theta_hist<-create_histogram(
+  data = read.items_AnSamp1,
+  variable = "Theta_read180",
+  mean_value = mean(read.items_AnSamp1$Theta_read180),
+  sd_value = sd(read.items_AnSamp1$Theta_read180),
+  title_prefix = "Theta180 DAACS Reading Scores from AnSamp1",
+  output_file = "readBifactor2PL124_AnSamp1_theta124_histogram.pdf"
+)
+readBifactor2PL_124_AnSamp2_theta_hist<-create_histogram(
+  data = read.items_AnSamp2,
+  variable = "Theta_read124",
+  mean_value = mean(read.items_AnSamp2$Theta_read124),
+  sd_value = sd(read.items_AnSamp2$Theta_read124),
+  title_prefix = "Theta124 DAACS Reading Scores from AnSamp2",
+  output_file = "readBifactor2PL124_AnSamp2_theta124_histogram.pdf"
+)
+readBifactor2PL_173_AnSamp2_theta_hist<-create_histogram(
+  data = read.items_AnSamp2,
+  variable = "Theta_read173",
+  mean_value = mean(read.items_AnSamp2$Theta_read173),
+  sd_value = sd(read.items_AnSamp2$Theta_read173),
+  title_prefix = "Theta173 DAACS Reading Scores from AnSamp2",
+  output_file = "readBifactor2PL173_AnSamp2_theta173_histogram.pdf"
+)
+readBifactor2PL_180_AnSamp2_theta_hist<-create_histogram(
+  data = read.items_AnSamp2,
+  variable = "Theta_read180",
+  mean_value = mean(read.items_AnSamp2$Theta_read180),
+  sd_value = sd(read.items_AnSamp2$Theta_read180),
+  title_prefix = "Theta180 DAACS Reading Scores from AnSamp2",
+  output_file = "readBifactor2PL124_AnSamp2_theta124_histogram.pdf"
+)
+readBifactor2PL_124_AnSamp1_theta_hist
+readBifactor2PL_173_AnSamp1_theta_hist
+readBifactor2PL_180_AnSamp1_theta_hist
+readBifactor2PL_124_AnSamp2_theta_hist
+readBifactor2PL_173_AnSamp2_theta_hist
+readBifactor2PL_180_AnSamp2_theta_hist
+```
+
+#### Density Plots of Theta-scores 
+Density Plot of Theta-scores from 124 items do not overlap fully with Density plots of Theta-scores from 173 and 180 items
+```{r}
+# library(ggplot2)
+# library(reshape2)
+# Function to create three density plots of the correlated measures in a single chart
+
+densityPlot_3Measures <- function(data1_tmp, data2_tmp, data3_tmp, 
+                                  label1_tmp = "Theta-scores from 180 Items",
+                                  label2_tmp = "Theta-scores from 173 Items",
+                                  label3_tmp = "Theta-scores from 124 Items",
+                                  x_label_tmp = "Theta-scores",
+                                  footnote = "",
+                                  output_file = "ReadingThetaScores_AnSamp1DensityPlots.pdf") {
+  
+  # Ensure correct ordering of factor levels
+  data_long <- data.frame(
+    Theta_Scores = c(data1_tmp, data2_tmp, data3_tmp),
+    Measure = factor(rep(c(label1_tmp, label2_tmp, label3_tmp), each = length(data1_tmp)),
+                     levels = c(label1_tmp, label2_tmp, label3_tmp)) 
+  )
+  
+  # Calculate means and SDs
+  means <- c(mean(data1_tmp, na.rm = TRUE), mean(data2_tmp, na.rm = TRUE), mean(data3_tmp, na.rm = TRUE))
+  sds <- c(sd(data1_tmp, na.rm = TRUE), sd(data2_tmp, na.rm = TRUE), sd(data3_tmp, na.rm = TRUE))
+  
+  # Create density plot
+  density_plot <- ggplot(data_long, aes(x = Theta_Scores, color = Measure, fill = Measure)) +
+    geom_density(alpha = 0.25, linewidth = 1) +
+    
+    # Add mean lines with correct colors
+    geom_vline(aes(xintercept = means[1], color = Measure), data = data.frame(Measure = label1_tmp), linetype = "dotted", linewidth = 1) +
+    geom_vline(aes(xintercept = means[2], color = Measure), data = data.frame(Measure = label2_tmp), linetype = "dashed", linewidth = 1) +
+    geom_vline(aes(xintercept = means[3], color = Measure), data = data.frame(Measure = label3_tmp), linetype = "dotdash", linewidth = 1) +
+
+    # Ensure colors match labels dynamically
+    scale_color_manual(
+      values = setNames(c("blue", "green", "red"), levels(data_long$Measure)),
+      name = "Measures",
+      labels = c(
+        sprintf("%s (Mean = %.2f, SD = %.2f)", levels(data_long$Measure)[1], means[1], sds[1]),
+        sprintf("%s (Mean = %.2f, SD = %.2f)", levels(data_long$Measure)[2], means[2], sds[2]),
+        sprintf("%s (Mean = %.2f, SD = %.2f)", levels(data_long$Measure)[3], means[3], sds[3])
+      )
+    ) +
+    scale_fill_manual(
+      values = setNames(c("blue", "green", "red"), levels(data_long$Measure)),
+      guide = "none"
+    ) +
+
+    # Add labels and footnote
+    labs(
+      title = "Density Plots for Theta-scores from 180, 173, and 124 Items, n = 4523",
+      x = x_label_tmp,
+      y = "Density",
+      caption = footnote
+    ) +
+    
+    # Adjust theme: Move legend above the plot
+    theme_minimal() +
+    theme(
+      legend.position = "top",
+      legend.title = element_text(size = 12),
+      legend.text = element_text(size = 10),
+      plot.title = element_text(size = 14, face = "bold"),
+      plot.caption = element_text(size = 9, hjust = 0)
+    )
+  
+  # Display the plot
+  print(density_plot)
+  
+  # Save the plot
+  ggsave(output_file, plot = density_plot, width = 8, height = 6)
+}
+
+
+# Apply the function with the three datasets:
+densityPlot_3Measures(
+  data1_tmp = Theta_read180[, 1],
+  data2_tmp = Theta_read173[, 1],
+  data3_tmp = Theta_read124[, 1],
+  x_label_tmp = "Theta-scores",
+  footnote = "Note: Data collected in 2022-23 a.y. from UMGC and UAlbany non-speedy students",
+  output_file = "ReadingThetaScores_DensityPlots_AnSamp1.pdf"
+)
+
+```
+
+Note: The plot does not end abruptly at the right edge of the plot area. See the highest values of the Thetas.
+```{r}
+sort(Theta_read180$Theta_read180, decreasing = TRUE)[1:10]
+sort(Theta_read173$Theta_read173, decreasing = TRUE)[1:10]
+sort(Theta_read124$Theta_read124, decreasing = TRUE)[1:10]
+```
+
+#### Normality tests
+
+##### QQ Plots
+Theta-scores distributed closely to normal distribution
+Both plots show a reasonable fit to a normal distribution, especially around
+the central values. However, the tails deviate slightly from normality, which
+might imply issues such as heavier tails or some skewness. This could suggest
+that both models capture the central tendency well but might need refinement
+in capturing extreme score behaviors.
+
+```{r}
+# library(car)
+
+# Save to PDF
+pdf("Read_Theta_Scores_qq-plots.pdf", width = 8, height = 12)
+
+# Set layout to include three rows (one per item set) and two columns (one per sample)
+par(mfrow = c(3, 2), oma = c(2, 0, 2, 0), mar = c(5, 4, 4, 2))
+
+# Row 1: 124-item (red)
+qqPlot(readBifactor2PL_umgc1ua2_all_Thetas$Theta_read124_AnSamp1, 
+       main = "AnSamp1 124-Item Thetas", 
+       col = "red", pch = 20, cex = 1.2)
+
+qqPlot(readBifactor2PL_umgc1ua2_all_Thetas$Theta_read124_AnSamp2, 
+       main = "AnSamp2 124-Item Thetas", 
+       col = "red", pch = 20, cex = 1.2)
+
+# Row 2: 173-item (blue)
+qqPlot(readBifactor2PL_umgc1ua2_all_Thetas$Theta_read173_AnSamp1, 
+       main = "AnSamp1 173-Item Thetas", 
+       col = "blue", pch = 20, cex = 1.2)
+
+qqPlot(readBifactor2PL_umgc1ua2_all_Thetas$Theta_read173_AnSamp2, 
+       main = "AnSamp2 173-Item Thetas", 
+       col = "blue", pch = 20, cex = 1.2)
+
+# Row 3: 180-item (green)
+qqPlot(readBifactor2PL_umgc1ua2_all_Thetas$Theta_read180_AnSamp1, 
+       main = "AnSamp1 180-Item Thetas", 
+       col = "green", pch = 20, cex = 1.2)
+
+qqPlot(readBifactor2PL_umgc1ua2_all_Thetas$Theta_read180_AnSamp2, 
+       main = "AnSamp2 180-Item Thetas", 
+       col = "green", pch = 20, cex = 1.2)
+
+# Add a title above the plots
+mtext("QQ-plots for Read Theta Scores", outer = TRUE, line = 0, cex = 1.5, font = 2)
+
+# Add the footnote below the plots
+mtext("Data collected from UMGC and UAlbany non-speedy respondents from July 2022 to May 2023", 
+      outer = TRUE, line = -1.5, cex = 1, font = 3)
+
+# Close PDF device
+dev.off()
+
+```
+
+#### Shapiro-Wilk normality test for theta scores: p < 0.001
+Theta_read is not normally distributed. 
+```{r}
+# Shapiro-Wilk normality test for each group
+shapiro.test(read.items_AnSamp1$Theta_read124)
+```
+
+##### ANOVA (t-test) confirms no difference in Theta-scores distributions 
+To test whether the distributions of two Theta-scores are different using an 
+ANOVA test, we need to prepare the data such that the two sets of Theta-scores 
+are compared as groups within the same dataset. 
+```{r}
+# Create two separate vectors of Theta-scores
+Theta_read173_tmp <- readBifactor2PL_umgc1ua2_all_Thetas$Theta_read173_AnSamp1
+Theta_read124_tmp <- readBifactor2PL_umgc1ua2_all_Thetas$Theta_read124_AnSamp1
+
+# Combine the two Theta-scores into one data frame with a grouping variable
+Theta_data_tmp <- data.frame(
+  Theta = c(Theta_read173_tmp, Theta_read124_tmp),
+  Group = rep(c("Theta_read173", "Theta_read124"), 
+              times = c(length(Theta_read173_tmp), length(Theta_read124_tmp)))
+)
+
+# Run an ANOVA test
+anova(lm(Theta ~ Group, data = Theta_data_tmp))
+
+```
+
+###### Paired-samples t-test confirms no difference in Theta-scores distributions 
+To test whether the distributions of two Theta-scores are different using a pared-samples t-test:
+```{r}
+# Wide format needed: one row per student
+t.test(read.items_AnSamp1$Theta_read173, read.items_AnSamp1$Theta_read124, paired = TRUE)
+```
+## Median values for reading scores 
+```{r}
+median(read.items_AnSamp1$Theta_read180)
+median(read.items_AnSamp1$Theta_read173)
+median(read.items_AnSamp1$Theta_read124)
+```
+
+```{r}
+min(read.items_AnSamp1$Theta_read124)
+max(read.items_AnSamp1$Theta_read124)
+```
+
+
+# Save all data in a single file 
+```{r}
+#save.image("D:/Dropbox/DAACS-Validity/Analyses/read/read_dataClean-umgc1ua2_5.RData")
+save.image("C:/Users/orosc/OneDrive - University at Albany - SUNY/My DAACS/read/read_dataClean-umgc1ua2_5.RData")
+```
+
